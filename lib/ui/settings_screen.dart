@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:enclavetalk/services/theme_provider.dart';
+import 'package:enclavetalk/ui/model_management_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -13,6 +14,7 @@ class SettingsScreen extends StatelessWidget {
     Colors.orange,
     Colors.red,
     Colors.pink,
+    Colors.grey,
   ];
 
   @override
@@ -62,15 +64,18 @@ class SettingsScreen extends StatelessWidget {
                 title: const Text('Manage Models'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
-                  // TODO: Navigate to a model management screen
+                  // --- THIS IS THE CHANGE ---
+                  // Navigate to the new model management screen
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ModelManagementScreen(),
+                    ),
+                  );
                 },
               ),
               ListTile(
                 title: const Text('Manage Knowledge Base'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  // TODO: Navigate to a knowledge base management screen
-                },
+                // ... (this part is the same)
               ),
             ],
           ),
@@ -125,6 +130,7 @@ class _AccentColorSelector extends StatelessWidget {
     return Wrap(
       spacing: 8.0,
       runSpacing: 8.0,
+      alignment: WrapAlignment.spaceBetween,
       children: availableColors.map((color) {
         bool isSelected = color.value == selectedColor.value;
         return InkWell(

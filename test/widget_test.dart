@@ -1,30 +1,56 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:enclavetalk/services/theme_provider.dart';
+import 'package:enclavetalk/ui/chat_screen.dart';
+import 'package:enclavetalk/ui/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:provider/provider.dart';
 import 'package:enclavetalk/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App starts and can navigate to settings', (
+    WidgetTester tester,
+  ) async {
+    // This prevents the test from trying to access the actual device storage.
+    SharedPreferences.setMockInitialValues({});
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: const EnclaveTalkApp(),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // loading state settle and the main UI to appear.
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // --- VERIFY THE CHAT SCREEN ---
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the ChatScreen is visible.
+    expect(find.byType(ChatScreen), findsOneWidget);
+
+    // Verify that our AppBar title is present.
+    expect(find.text('EnclaveTalk'), findsOneWidget);
+
+    // Verify the text input field is present.
+    expect(find.byType(TextField), findsOneWidget);
+
+    // --- INTERACT AND VERIFY NAVIGATION ---
+
+    // Find the settings icon and tap it.
+    await tester.tap(find.byIcon(Icons.settings));
+
+    // Wait for the navigation animation to complete.
+    await tester.pumpAndSettle();
+
+    // Verify that the SettingsScreen is now visible.
+    expect(find.byType(SettingsScreen), findsOneWidget);
+
+    // Verify a key piece of text on the settings screen is present.
+    expect(find.text('Appearance'), findsOneWidget);
+
+    // Verify that the ChatScreen is no longer visible.
+    expect(find.byType(ChatScreen), findsNothing);
   });
 }
