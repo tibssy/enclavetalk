@@ -64,8 +64,6 @@ class SettingsScreen extends StatelessWidget {
                 title: const Text('Manage Models'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
-                  // --- THIS IS THE CHANGE ---
-                  // Navigate to the new model management screen
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const ModelManagementScreen(),
@@ -73,10 +71,7 @@ class SettingsScreen extends StatelessWidget {
                   );
                 },
               ),
-              ListTile(
-                title: const Text('Manage Knowledge Base'),
-                // ... (this part is the same)
-              ),
+              ListTile(title: const Text('Manage Knowledge Base')),
             ],
           ),
         ],

@@ -1,6 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:background_downloader/background_downloader.dart';
 import 'package:enclavetalk/models/ai_model.dart';
+import 'package:enclavetalk/services/download_service.dart';
+import 'package:enclavetalk/data/available_models.dart';
+import 'package:enclavetalk/ui/widgets/hf_token_dialog.dart';
 
 class ModelManagementScreen extends StatefulWidget {
   const ModelManagementScreen({super.key});
@@ -10,99 +14,123 @@ class ModelManagementScreen extends StatefulWidget {
 }
 
 class _ModelManagementScreenState extends State<ModelManagementScreen> {
-  final List<AIModel> _models = [
-    AIModel(
-      id: 'gemma-2b',
-      name: 'Gemma 2B',
-      description: 'Fast and capable for general chat.',
-      size: '1.5 GB',
-      status: DownloadStatus.downloaded,
-    ),
-    AIModel(
-      id: 'phi-3-mini',
-      name: 'Phi-3 Mini',
-      description: 'Powerful, small model from Microsoft.',
-      size: '2.1 GB',
-    ),
-    AIModel(
-      id: 'gemma-3-nano',
-      name: 'Gemma 3 Nano',
-      description: 'Excellent multimodal vision capabilities.',
-      size: '3.4 GB',
-    ),
-  ];
+  final List<AIModel> _models = availableModels;
 
-  // --- DUMMY LOGIC ---
-  // Simulates downloading a model
-  void _startDownload(AIModel model) {
-    setState(() {
-      model.status = DownloadStatus.downloading;
-      model.downloadProgress = 0.0;
-    });
-
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      setState(() {
-        model.downloadProgress += 0.05;
-        if (model.downloadProgress >= 1.0) {
-          model.downloadProgress = 1.0;
-          model.status = DownloadStatus.downloaded;
-          timer.cancel();
-        }
-      });
-    });
+  void _handleDownloadTap(
+    BuildContext context,
+    AIModel model,
+    DownloadService downloadService,
+  ) {
+    if (model.requiresAuth && !downloadService.hasToken) {
+      showDialog(
+        context: context,
+        builder: (context) => HfTokenDialog(
+          onSave: (token) {
+            downloadService.saveToken(token).then((_) {
+              downloadService.startDownload(model);
+            });
+          },
+        ),
+      );
+      return;
+    }
+    downloadService.startDownload(model);
   }
 
-  void _deleteModel(AIModel model) {
-    setState(() {
-      model.status = DownloadStatus.notDownloaded;
-      model.downloadProgress = 0.0;
-    });
-  }
+  Widget _buildTrailingWidget(AIModel model, DownloadService downloadService) {
+    final status = downloadService.getStatus(model.id);
+    final progress = downloadService.getProgress(model.id);
+    final bool isLocked = model.requiresAuth && !downloadService.hasToken;
 
-  // --- UI WIDGETS ---
-  Widget _buildActionButton(AIModel model) {
-    switch (model.status) {
-      case DownloadStatus.notDownloaded:
-        return IconButton(
-          icon: const Icon(Icons.download_for_offline_outlined),
-          onPressed: () => _startDownload(model),
+    switch (status) {
+      case TaskStatus.enqueued:
+        return const Text(
+          'Pending...',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
         );
-      case DownloadStatus.downloading:
-        return SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            value: model.downloadProgress,
-            strokeWidth: 3,
+      case TaskStatus.running:
+        return Text(
+          '${(progress * 100).toStringAsFixed(0)}%',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
           ),
         );
-      case DownloadStatus.downloaded:
+      case TaskStatus.complete:
         return IconButton(
           icon: Icon(
             Icons.delete_outline,
             color: Theme.of(context).colorScheme.error,
           ),
-          onPressed: () => _deleteModel(model),
+          onPressed: () => downloadService.deleteModel(model),
+        );
+      case TaskStatus.failed:
+      case TaskStatus.canceled:
+      case TaskStatus.notFound:
+      default:
+        return IconButton(
+          icon: Icon(
+            isLocked ? Icons.lock_outline : Icons.download_for_offline_outlined,
+            color: isLocked ? Colors.orange : null,
+          ),
+          onPressed: () => _handleDownloadTap(context, model, downloadService),
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final downloadService = context.watch<DownloadService>();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Manage Models')),
       body: ListView.builder(
         itemCount: _models.length,
         itemBuilder: (context, index) {
           final model = _models[index];
+
+          final status = downloadService.getStatus(model.id);
+          final progress = downloadService.getProgress(model.id);
+
+          final isDownloading =
+              status == TaskStatus.running || status == TaskStatus.enqueued;
+          final isDownloaded = status == TaskStatus.complete;
+
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              leading: const Icon(Icons.memory),
-              title: Text(model.name),
-              subtitle: Text('${model.description}\nSize: ${model.size}'),
-              isThreeLine: true,
-              trailing: _buildActionButton(model),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: Icon(
+                    Icons.memory,
+                    size: 32,
+                    color: isDownloaded
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  title: Text(
+                    model.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  subtitle: Text('${model.description}\nSize: ${model.size}'),
+                  isThreeLine: true,
+                  trailing: _buildTrailingWidget(model, downloadService),
+                ),
+                if (isDownloading)
+                  LinearProgressIndicator(
+                    value: status == TaskStatus.enqueued ? null : progress,
+                    minHeight: 4,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                  ),
+              ],
             ),
           );
         },

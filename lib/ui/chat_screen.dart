@@ -19,7 +19,6 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.insert(0, ChatMessage(text: text, isUser: true));
         // TODO: Call your AI service here
-        // and add its response to the list in another setState call.
       });
 
       _textController.clear();

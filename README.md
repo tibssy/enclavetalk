@@ -18,7 +18,7 @@ EnclaveTalk is a privacy-focused conversational AI that runs entirely on your de
 -   **Framework:** Flutter
 -   **State Management:** Provider
 -   **Local Storage:** SharedPreferences
--   **Planned AI Core:** `gemma_flutter` for on-device LLM inference and embeddings.
+-   **Planned AI Core:** `flutter_gemma` for on-device LLM inference and embeddings.
 
 ## 🚀 Getting Started
 

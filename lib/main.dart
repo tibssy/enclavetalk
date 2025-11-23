@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:enclavetalk/services/download_service.dart';
 import 'package:enclavetalk/services/theme_provider.dart';
 import 'package:enclavetalk/ui/chat_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  final themeProvider = ThemeProvider();
+  final downloadService = DownloadService();
+
+  await downloadService.initialize();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: themeProvider),
+        ChangeNotifierProvider.value(value: downloadService),
+      ],
       child: const EnclaveTalkApp(),
     ),
   );
