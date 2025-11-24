@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:enclavetalk/ui/history_screen.dart';
 import 'package:enclavetalk/ui/settings_screen.dart';
 import 'package:enclavetalk/ui/utils/slide_from_left_route.dart';
+import 'package:enclavetalk/ui/widgets/model_selection_sheet.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ChatAppBar({super.key});
@@ -38,6 +39,19 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         },
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.psychology),
+          tooltip: 'Select AI Model',
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              isScrollControlled: true,
+              barrierColor: Colors.transparent,
+              builder: (context) => const ModelSelectionSheet(),
+            );
+          },
+        ),
         IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {

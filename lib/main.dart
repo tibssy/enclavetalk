@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enclavetalk/services/download_service.dart';
 import 'package:enclavetalk/services/theme_provider.dart';
 import 'package:enclavetalk/ui/chat_screen.dart';
+import 'package:enclavetalk/services/model_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +12,7 @@ void main() async {
 
   final themeProvider = ThemeProvider();
   final downloadService = DownloadService();
+  final modelProvider = ModelProvider();
 
   await downloadService.initialize();
 
@@ -19,6 +21,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider.value(value: themeProvider),
         ChangeNotifierProvider.value(value: downloadService),
+        ChangeNotifierProvider.value(value: modelProvider),
       ],
       child: const EnclaveTalkApp(),
     ),
